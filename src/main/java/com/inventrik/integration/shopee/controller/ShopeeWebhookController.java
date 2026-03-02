@@ -34,7 +34,7 @@ public class ShopeeWebhookController {
      * <p>
      * Shopee expects a 200 OK response; any other status may trigger re-delivery.
      *
-     * @param request the webhook payload from Shopee
+     * @param request the webhook payload from Shopee 
      * @return 200 OK
      */
     @PostMapping("/events.json")

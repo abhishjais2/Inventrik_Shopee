@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import java.util.Map;
 
@@ -43,5 +44,5 @@ public class ShopeeWebhookRequest {
 
     /** Event-specific payload — kept as a generic map for flexibility */
     @JsonProperty("data")
-    private Map<String, Object> data;
+    private JsonNode data;
 }

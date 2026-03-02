@@ -1,5 +1,6 @@
 package com.inventrik.integration.shopee.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.inventrik.integration.shopee.constant.ShopeeConstants;
 import com.inventrik.integration.shopee.model.webhook.CustomerJoinEventPayload;
@@ -10,7 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.util.Map;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * Single webhook processor that routes incoming Shopee events to dedicated
@@ -70,7 +71,7 @@ public class ShopeeWebhookProcessor {
     /**
      * Handle order status change events (push code 3).
      */
-    private void handleOrderEvent(Map<String, Object> data) {
+    private void handleOrderEvent(JsonNode data) {
         OrderEventPayload payload = objectMapper.convertValue(data, OrderEventPayload.class);
         log.info("Order event received [orderSn={}, status={}, updateTime={}]",
                 payload.getOrderSn(), payload.getStatus(), payload.getUpdateTime());
@@ -83,7 +84,7 @@ public class ShopeeWebhookProcessor {
     /**
      * Handle payment-related events.
      */
-    private void handlePaymentEvent(Map<String, Object> data) {
+    private void handlePaymentEvent(JsonNode data) {
         PaymentEventPayload payload = objectMapper.convertValue(data, PaymentEventPayload.class);
         log.info("Payment event received [orderSn={}, paymentStatus={}, method={}]",
                 payload.getOrderSn(), payload.getPaymentStatus(), payload.getPaymentMethod());
@@ -92,7 +93,7 @@ public class ShopeeWebhookProcessor {
     /**
      * Handle customer join events.
      */
-    private void handleCustomerJoinEvent(Map<String, Object> data) {
+    private void handleCustomerJoinEvent(JsonNode data) {
         CustomerJoinEventPayload payload = objectMapper.convertValue(data, CustomerJoinEventPayload.class);
         log.info("Customer join event received [userId={}, username={}]",
                 payload.getUserId(), payload.getUsername());
@@ -101,7 +102,7 @@ public class ShopeeWebhookProcessor {
     /**
      * Handle unknown / future event types — logs a warning but does not throw.
      */
-    private void handleUnknownEvent(String eventType, Map<String, Object> data) {
+    private void handleUnknownEvent(String eventType, JsonNode data) {
         log.warn("Unknown webhook event type received [eventType={}]. Payload: {}", eventType, data);
     }
 

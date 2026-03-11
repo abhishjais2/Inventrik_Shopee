@@ -2,6 +2,10 @@ package com.inventrik.shopee.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+<<<<<<< HEAD
+=======
+import com.inventrik.shopee.auth.TokenCacheManager;
+>>>>>>> 2ff3c00 (included uninstall features too)
 import com.inventrik.shopee.constant.ShopeeConstants;
 import com.inventrik.shopee.model.webhook.CustomerJoinEventPayload;
 import com.inventrik.shopee.model.webhook.OrderEventPayload;
@@ -28,9 +32,11 @@ public class ShopeeWebhookProcessor {
     private static final Logger log = LoggerFactory.getLogger(ShopeeWebhookProcessor.class);
 
     private final ObjectMapper objectMapper;
+    private final TokenCacheManager tokenCacheManager;
 
-    public ShopeeWebhookProcessor(ObjectMapper objectMapper) {
+    public ShopeeWebhookProcessor(ObjectMapper objectMapper, TokenCacheManager tokenCacheManager) {
         this.objectMapper = objectMapper;
+        this.tokenCacheManager = tokenCacheManager;
     }
 
     public void process(ShopeeWebhookRequest request) {
@@ -40,6 +46,10 @@ public class ShopeeWebhookProcessor {
                 eventType, request.getCode(), request.getShopId(), request.getTimestamp());
 
         switch (eventType) {
+            case ShopeeConstants.EVENT_SHOP_DEAUTH:
+                handleShopDeauthEvent(request.getShopId(), request.getData());
+                break;
+
             case ShopeeConstants.EVENT_ORDER_STATUS:
                 handleOrderEvent(request.getData());
                 break;
@@ -60,6 +70,17 @@ public class ShopeeWebhookProcessor {
 
     // ── Event Handlers ───────────────────────────────────────────────────
 
+<<<<<<< HEAD
+=======
+    private void handleShopDeauthEvent(Long shopId, JsonNode data) {
+        log.warn("Shop deauthorization received [shopId={}]. Clearing cached tokens.", shopId);
+        if (shopId != null) {
+            tokenCacheManager.clearToken(shopId);
+        }
+        log.warn("Shop deauthorized — app uninstalled by seller [shopId={}, data={}]", shopId, data);
+    }
+
+>>>>>>> 2ff3c00 (included uninstall features too)
     private void handleOrderEvent(JsonNode data) {
         OrderEventPayload payload = objectMapper.convertValue(data, OrderEventPayload.class);
         log.info("Order event received [orderSn={}, status={}, updateTime={}]",
@@ -91,6 +112,8 @@ public class ShopeeWebhookProcessor {
 
         if (request.getCode() != null) {
             switch (request.getCode()) {
+                case ShopeeConstants.PUSH_CODE_SHOP_DEAUTH:
+                    return ShopeeConstants.EVENT_SHOP_DEAUTH;
                 case ShopeeConstants.PUSH_CODE_ORDER_STATUS:
                     return ShopeeConstants.EVENT_ORDER_STATUS;
                 case ShopeeConstants.PUSH_CODE_PAYMENT_UPDATE:

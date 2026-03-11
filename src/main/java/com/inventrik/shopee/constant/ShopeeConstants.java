@@ -13,6 +13,8 @@ public final class ShopeeConstants {
     }
 
     // ── Webhook Push Mechanism Codes ─────────────────────────────────────
+    /** Shopee push code 2 — shop authorization cancelled (uninstall) */
+    public static final int PUSH_CODE_SHOP_DEAUTH = 2;
     /** Shopee push code 3 — order status change */
     public static final int PUSH_CODE_ORDER_STATUS = 3;
     /** Shopee push code — payment update (placeholder, varies by region) */
@@ -21,6 +23,7 @@ public final class ShopeeConstants {
     public static final int PUSH_CODE_CUSTOMER_JOIN = 10;
 
     // ── Webhook Event Type Strings ───────────────────────────────────────
+    public static final String EVENT_SHOP_DEAUTH = "SHOP_DEAUTH";
     public static final String EVENT_ORDER_STATUS = "ORDER_STATUS";
     public static final String EVENT_PAYMENT_UPDATE = "PAYMENT_UPDATE";
     public static final String EVENT_CUSTOMER_JOIN = "CUSTOMER_JOIN";

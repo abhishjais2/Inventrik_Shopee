@@ -1,0 +1,186 @@
+# Shopee Sandbox Authorization — Complete Testing Guide
+
+## Overview
+
+This guide walks through the **entire authorization flow** for your Shopee sandbox test shop (Shop ID: `226455707`), using Cloudflare Tunnel to expose your local Spring Boot app.
+
+```mermaid
+sequenceDiagram
+    participant You as Your Browser
+    participant App as Spring Boot (localhost:8080)
+    participant CF as Cloudflare Tunnel
+    participant Shopee as Shopee Sandbox
+
+    You->>App: GET /test/shopee/auth/url
+    App-->>You: Returns authorization URL
+    You->>Shopee: Open auth URL in browser
+    Shopee-->>You: Shows login page
+    You->>Shopee: Login with sandbox credentials
+    Shopee-->>You: Shows "Confirm Authorization"
+    You->>Shopee: Click Confirm
+    Shopee->>CF: Redirect to your callback URL
+    CF->>App: Forward to /api/shopee/auth/callback?code=...&shop_id=...
+    App->>Shopee: POST /api/v2/auth/token/get (exchange code for tokens)
+    Shopee-->>App: Returns access_token + refresh_token
+    App-->>You: Shows tokens in browser (JSON)
+```
+
+---
+
+## Step 1 — Start Your Spring Boot App
+
+```bash
+cd "d:\Inventrik 2.0\Project 1\3) Shopee"
+mvn spring-boot:run
+```
+
+Verify it's running: open `http://localhost:8080/test/shopee/auth/url` in your browser. You should see a URL string (don't open it yet).
+
+---
+
+## Step 2 — Start Cloudflare Tunnel
+
+Open a **separate terminal** and run:
+
+```bash
+cloudflared tunnel --url http://localhost:8080
+```
+
+Cloudflare will output something like:
+
+```
+Your quick Tunnel has been created! Visit it at:
+https://some-random-name.trycloudflare.com
+```
+
+> [!IMPORTANT]
+> **Copy this URL!** You'll need it in the next steps. Every time you restart cloudflared, you get a **new random URL**.
+
+---
+
+## Step 3 — Update the Redirect URL in Your Code
+
+Open [ShopeeConfig.java](file:///d:/Inventrik%202.0/Project%201/3%29%20Shopee/src/main/java/com/inventrik/integration/shopee/config/ShopeeConfig.java) and update the `REDIRECT_URL`:
+
+```java
+// Replace with YOUR Cloudflare Tunnel URL + callback path
+public static final String REDIRECT_URL = "https://some-random-name.trycloudflare.com/api/shopee/auth/callback";
+```
+
+Then **rebuild and restart** the app:
+
+```bash
+Ctrl+C   (stop the running app)
+mvn spring-boot:run
+```
+
+---
+
+## Step 4 — Register the Redirect URL in Shopee Console
+
+> [!CAUTION]
+> Shopee will **reject** the callback if the redirect URL domain is not whitelisted in your app settings.
+
+1. Go to **[Shopee Open Platform Console](https://open.shopee.com/console)** → **App Management** → **App List**
+2. Click on your app
+3. Find **"App Configurations"** or **"Redirect URL"** setting
+4. Add your Cloudflare Tunnel domain: `https://some-random-name.trycloudflare.com`
+5. Save
+
+---
+
+## Step 5 — Generate the Authorization URL
+
+With the app running and Cloudflare tunnel active:
+
+1. Open in browser or Postman:
+   ```
+   GET http://localhost:8080/test/shopee/auth/url
+   ```
+2. You'll get a URL like:
+   ```
+   https://partner.test-stable.shopeemobile.com/api/v2/shop/auth_partner
+   ?partner_id=1212400
+   &timestamp=1700000000
+   &sign=abc123def456...
+   &redirect_url=https://some-random-name.trycloudflare.com/api/shopee/auth/callback
+   ```
+
+---
+
+## Step 6 — Authorize the Test Shop
+
+1. **Copy the full URL** from Step 5
+2. **Paste it in your browser** and press Enter
+3. Shopee sandbox will show a **login page**
+4. Login with your **test shop credentials** from the Shopee Console:
+
+   | Field | Value |
+   |-------|-------|
+   | Shop Account | `xxxxxxxxx` |
+   | Shop Password | `xxxxxxxx` |
+
+5. After login, Shopee shows a **"Confirm Authorization"** page
+6. Click **"Confirm Authorization"**
+7. Shopee redirects to your callback URL:
+   ```
+   https://your-tunnel.trycloudflare.com/api/shopee/auth/callback?code=XXXXX&shop_id=226455707
+   ```
+8. Your [ShopeeAuthCallbackController](file:///d:/Inventrik%202.0/Project%201/3%29%20Shopee/src/main/java/com/inventrik/integration/shopee/controller/ShopeeAuthCallbackController.java) catches this, exchanges the code for tokens, and returns a JSON response:
+   ```json
+   {
+     "status": "SUCCESS",
+     "message": "Shop authorized successfully!",
+     "shop_id": 226455707,
+     "access_token": "xxxxxxxxxxxxxxxx",
+     "refresh_token": "yyyyyyyyyyyyyyyy",
+     "expires_at_epoch": 1700014400
+   }
+   ```
+
+> [!TIP]
+> **Save the `access_token` and `refresh_token`!** They are cached in memory by `TokenCacheManager`, but will be lost when the app restarts. For persistence, you'd need to store them in a database.
+
+---
+
+## Step 7 — Test API Calls (Optional — Verify Everything Works)
+
+Now that you have tokens, you can test the Shopee API endpoints using Postman or curl:
+
+### Fetch Orders
+```bash
+POST http://localhost:8080/test/shopee/order/fetch
+Content-Type: application/json
+
+{
+  "order_sn_list": ["TEST_ORDER_001"]
+}
+```
+
+### Create a Test Order via Shopee's "Test Order" Tool
+1. In the Shopee Console sidebar, click **[Test Order](https://open.shopee.com/console/tools/test-order)**
+2. Select your test shop (`226455707`)
+3. Create a test order
+4. Use the order SN in the Fetch Orders API above
+
+---
+
+## Troubleshooting
+
+| Problem | Solution |
+|---------|----------|
+| `error_param: Partner_id is invalid` | Rebuild the app after code changes. Old `.class` files may still use string concatenation. Run `mvn clean compile` then `mvn spring-boot:run`. |
+| Shopee shows "redirect_url not registered" | Add your Cloudflare Tunnel domain to the app's redirect URL whitelist in Shopee Console. |
+| Callback never reaches your app | Verify Cloudflare Tunnel is running. Check the tunnel URL works directly: `https://your-tunnel.trycloudflare.com/test/shopee/auth/url` |
+| `401 Unauthorized` on API calls | Token may have expired (4 hours). Re-run Steps 5-6, or call `POST /test/shopee/auth/refresh?shopId=226455707` |
+| `error_auth: code expired` | The auth code is one-time use and expires quickly. Repeat Steps 5-6 promptly after generating the URL. |
+
+---
+
+## Files Changed
+
+| File | What was done |
+|------|---------------|
+| [ShopeeAuthCallbackController.java](file:///d:/Inventrik%202.0/Project%201/3%29%20Shopee/src/main/java/com/inventrik/integration/shopee/controller/ShopeeAuthCallbackController.java) | **[NEW]** OAuth callback handler — captures `code` + `shop_id` and exchanges for tokens |
+| [ShopeeConfig.java](file:///d:/Inventrik%202.0/Project%201/3%29%20Shopee/src/main/java/com/inventrik/integration/shopee/config/ShopeeConfig.java) | Added `REDIRECT_URL` constant |
+| [ShopeeServiceImpl.java](file:///d:/Inventrik%202.0/Project%201/3%29%20Shopee/src/main/java/com/inventrik/integration/shopee/service/ShopeeServiceImpl.java) | Uses `ShopeeConfig.REDIRECT_URL` instead of hardcoded URL |

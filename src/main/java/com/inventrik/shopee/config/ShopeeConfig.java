@@ -27,7 +27,11 @@ public class ShopeeConfig {
      * Set this to your Cloudflare Tunnel URL + callback path.
      * Example: https://your-tunnel.trycloudflare.com/api/shopee/auth/callback
      */
+<<<<<<< HEAD
     public static final String REDIRECT_URL = "https://hardwood-friday-airport-offered.trycloudflare.com/api/shopee/auth/callback";
+=======
+    public static final String REDIRECT_URL = "https://paso-excel-approaches-breaking.trycloudflare.com/api/shopee/auth/callback";
+>>>>>>> 2ff3c00 (included uninstall features too)
 
     // ── Base URLs ────────────────────────────────────────────────────────
     /** Sandbox / test environment (official Shopee sandbox for test credentials) */

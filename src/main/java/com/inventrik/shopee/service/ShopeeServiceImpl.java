@@ -7,6 +7,10 @@ import com.inventrik.shopee.auth.TokenCacheManager;
 import com.inventrik.shopee.config.ShopeeConfig;
 import com.inventrik.shopee.constant.ShopeeConstants;
 import com.inventrik.shopee.exception.ShopeeApiException;
+<<<<<<< HEAD
+=======
+import com.inventrik.shopee.model.ShopConnectionStatus;
+>>>>>>> 2ff3c00 (included uninstall features too)
 import com.inventrik.shopee.model.request.CancelOrderRequest;
 import com.inventrik.shopee.model.request.CreateOrderRequest;
 import com.inventrik.shopee.model.request.FetchOrderRequest;
@@ -222,6 +226,27 @@ public class ShopeeServiceImpl implements ShopeeService {
         return responseEntity.getBody();
     }
 
+<<<<<<< HEAD
+=======
+    // ── Install / Uninstall ──────────────────────────────────────────────
+
+    @Override
+    public String generateInstallUrl() {
+        return generateSandboxAuthUrl();
+    }
+
+    @Override
+    public ShopConnectionStatus uninstallShop(long shopId) {
+        log.info("Uninstalling shop [shopId={}] — clearing cached tokens", shopId);
+        tokenCacheManager.clearToken(shopId);
+        log.info("Shop disconnected successfully [shopId={}]", shopId);
+        return new ShopConnectionStatus(shopId,
+                ShopConnectionStatus.STATUS_DISCONNECTED,
+                "Shop disconnected from VoucherMatic. Tokens cleared. " +
+                        "Note: To fully revoke access, the seller must also deauthorize the app from Shopee Seller Centre.");
+    }
+
+>>>>>>> 2ff3c00 (included uninstall features too)
     // ── Sandbox Shop Authorization URL Generator ─────────────────────────────
 
     @Override

@@ -1,6 +1,10 @@
 package com.inventrik.shopee.controller;
 
 import com.inventrik.shopee.auth.ShopeeAuthService;
+<<<<<<< HEAD
+=======
+import com.inventrik.shopee.model.ShopConnectionStatus;
+>>>>>>> 2ff3c00 (included uninstall features too)
 import com.inventrik.shopee.model.auth.ShopeeTokenInfo;
 import com.inventrik.shopee.model.request.CancelOrderRequest;
 import com.inventrik.shopee.model.request.CreateOrderRequest;
@@ -40,8 +44,40 @@ public class ShopeeTestController {
         this.authService = authService;
     }
 
+    // ── Install / Uninstall ─────────────────────────────────────────────
+
+<<<<<<< HEAD
+=======
+    /**
+     * Generate the install URL for merchants.
+     * Put this URL behind an "Install" / "Connect Shopee" button on VoucherMatic.
+     * <p>
+     * GET /test/shopee/install/url
+     */
+    @GetMapping(value = "/install/url", produces = MediaType.TEXT_PLAIN_VALUE)
+    public ResponseEntity<String> getInstallUrl() {
+        log.info("Generating install URL for VoucherMatic");
+        String url = shopeeService.generateInstallUrl();
+        return ResponseEntity.ok(url);
+    }
+
+    /**
+     * Disconnect a shop from VoucherMatic.
+     * Clears cached tokens. The seller should also deauthorize from Shopee Seller
+     * Centre.
+     * <p>
+     * POST /test/shopee/uninstall?shopId=226455707
+     */
+    @PostMapping("/uninstall")
+    public ResponseEntity<ShopConnectionStatus> uninstallShop(@RequestParam long shopId) {
+        log.info("Uninstalling shop [shopId={}]", shopId);
+        ShopConnectionStatus status = shopeeService.uninstallShop(shopId);
+        return ResponseEntity.ok(status);
+    }
+
     // ── Auth Testing ─────────────────────────────────────────────────────
 
+>>>>>>> 2ff3c00 (included uninstall features too)
     @PostMapping("/auth/token")
     public ResponseEntity<ShopeeTokenInfo> getToken(@RequestBody Map<String, Object> body) {
         String code = (String) body.get("code");
